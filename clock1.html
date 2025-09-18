@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>霓虹发光复古数字时钟</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .neon-text {
+            font-family: 'Orbitron', monospace;
+            animation: neon-glow 2s ease-in-out infinite alternate, color-shift 8s ease-in-out infinite;
+        }
+        
+        @keyframes neon-glow {
+            from {
+                text-shadow: 
+                    0 0 5px currentColor,
+                    0 0 10px currentColor,
+                    0 0 15px currentColor,
+                    0 0 20px currentColor,
+                    0 0 25px currentColor;
+            }
+            to {
+                text-shadow: 
+                    0 0 10px currentColor,
+                    0 0 20px currentColor,
+                    0 0 30px currentColor,
+                    0 0 40px currentColor,
+                    0 0 50px currentColor,
+                    0 0 60px currentColor;
+            }
+        }
+        
+        @keyframes color-shift {
+            0% { color: #ff00ff; }
+            25% { color: #00ffff; }
+            50% { color: #ffff00; }
+            75% { color: #ff0080; }
+            100% { color: #ff00ff; }
+        }
+        
+        .background-grid {
+            background-image: 
+                linear-gradient(rgba(255, 0, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-move 20s linear infinite;
+        }
+        
+        @keyframes grid-move {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
+        }
+        
+        .date-display {
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
+        }
+        
+        .back-button {
+            transition: all 0.3s ease;
+            color: #ff00ff;
+            text-shadow: 0 0 5px #ff00ff;
+        }
+        
+        .back-button:hover {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-black min-h-screen overflow-hidden background-grid">
+    
+    <!-- 返回按钮 -->
+    <div class="absolute top-6 left-6 z-10">
+        <button onclick="switchToClock && switchToClock('home')" class="back-button text-lg font-semibold hover:scale-110 transition-transform">
+            ← 返回主页
+        </button>
+    </div>
+    
+    <!-- 标题 -->
+    <div class="absolute top-6 right-6 z-10">
+        <h1 class="text-xl font-['Orbitron'] font-bold text-neon-pink">霓虹复古时钟</h1>
+    </div>
+
+    <!-- 主时钟区域 -->
+    <div class="flex flex-col items-center justify-center min-h-screen px-4">
+        
+        <!-- 时间显示 -->
+        <div id="main-clock" class="neon-text text-8xl md:text-9xl lg:text-[12rem] font-black mb-8">
+            00:00:00
+        </div>
+        
+        <!-- 日期显示 -->
+        <div id="date-display" class="date-display text-2xl md:text-3xl font-['Orbitron'] font-semibold mb-8">
+            2024年1月1日 星期一
+        </div>
+        
+        <!-- 装饰元素 -->
+        <div class="flex space-x-8 mb-12">
+            <div class="w-16 h-1 bg-gradient-to-r from-transparent via-pink-500 to-transparent animate-pulse"></div>
+            <div class="w-16 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent animate-pulse delay-300"></div>
+            <div class="w-16 h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent animate-pulse delay-700"></div>
+        </div>
+        
+        <!-- 毫秒计数器 -->
+        <div id="milliseconds" class="text-purple-400 text-lg font-['Orbitron'] opacity-70">
+            .000
+        </div>
+    </div>
+    
+    <!-- 装饰性边框 -->
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 animate-pulse"></div>
+    <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 animate-pulse"></div>
+    <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-pink-500 via-purple-500 to-cyan-500 animate-pulse delay-500"></div>
+    <div class="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-cyan-500 via-purple-500 to-pink-500 animate-pulse delay-500"></div>
+
+    <script>
+        function updateTime() {
+            const now = new Date();
+            
+            // 更新时间
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const timeString = `${hours}:${minutes}:${seconds}`;
+            
+            // 更新毫秒
+            const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+            
+            // 更新日期
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const weekday = weekdays[now.getDay()];
+            const dateString = `${year}年${month}月${date}日 ${weekday}`;
+            
+            document.getElementById('main-clock').textContent = timeString;
+            document.getElementById('milliseconds').textContent = `.${milliseconds}`;
+            document.getElementById('date-display').textContent = dateString;
+        }
+        
+        // 初始化并设置定时器
+        updateTime();
+        setInterval(updateTime, 50); // 更频繁的更新以显示毫秒
+        
+        // 添加键盘事件监听
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && window.switchToClock) {
+                window.switchToClock('home');
+            }
+        });
+        
+        // 添加点击效果
+        document.addEventListener('click', function() {
+            const clock = document.getElementById('main-clock');
+            clock.style.animation = 'none';
+            clock.offsetHeight; // 触发回流
+            clock.style.animation = 'neon-glow 0.5s ease-in-out, color-shift 8s ease-in-out infinite';
+        });
+    </script>
+
+</body>
+</html>

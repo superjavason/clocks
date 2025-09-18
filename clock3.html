@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毛玻璃拟态数字时钟</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        
+        .glass-morphism-dark {
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .animated-bg {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .floating-orbs {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            animation: float 20s infinite linear;
+        }
+        
+        .orb:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-duration: 25s;
+            animation-delay: 0s;
+        }
+        
+        .orb:nth-child(2) {
+            width: 60px;
+            height: 60px;
+            top: 60%;
+            left: 80%;
+            animation-duration: 20s;
+            animation-delay: -5s;
+        }
+        
+        .orb:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            top: 80%;
+            left: 20%;
+            animation-duration: 30s;
+            animation-delay: -10s;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-100px) rotate(180deg); opacity: 0.5; }
+            100% { transform: translateY(0px) rotate(360deg); opacity: 1; }
+        }
+        
+        .time-digit {
+            transition: all 0.3s ease;
+        }
+        
+        .time-digit:hover {
+            transform: scale(1.05);
+        }
+        
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .back-button {
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            transform: translateX(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen animated-bg relative overflow-hidden">
+    
+    <!-- 浮动装饰球 -->
+    <div class="floating-orbs">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+    
+    <!-- 返回按钮 -->
+    <div class="absolute top-6 left-6 z-20">
+        <button onclick="switchToClock && switchToClock('home')" class="back-button glass-morphism text-white text-lg font-medium px-4 py-2 rounded-xl flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            返回主页
+        </button>
+    </div>
+    
+    <!-- 标题 -->
+    <div class="absolute top-6 right-6 z-20">
+        <h1 class="glass-morphism text-white text-xl font-semibold px-4 py-2 rounded-xl">毛玻璃拟态时钟</h1>
+    </div>
+
+    <!-- 主时钟区域 -->
+    <div class="flex flex-col items-center justify-center min-h-screen px-4 relative z-10">
+        
+        <!-- 主时钟卡片 -->
+        <div class="glass-morphism rounded-3xl p-8 md:p-12 mb-8 max-w-4xl w-full">
+            
+            <!-- 时间显示 -->
+            <div id="main-clock" class="text-center mb-6">
+                <div class="flex justify-center items-center space-x-2 md:space-x-4">
+                    <span id="hours" class="time-digit text-6xl md:text-8xl lg:text-9xl font-bold text-white">00</span>
+                    <span class="text-4xl md:text-6xl lg:text-7xl font-light text-white pulse">:</span>
+                    <span id="minutes" class="time-digit text-6xl md:text-8xl lg:text-9xl font-bold text-white">00</span>
+                </div>
+                <div id="seconds" class="text-2xl md:text-4xl font-medium text-white mt-4 opacity-80">
+                    00
+                </div>
+            </div>
+            
+            <!-- 日期显示 -->
+            <div id="date-display" class="text-center text-lg md:text-xl font-medium text-white opacity-90 mb-6">
+                2024年1月1日 星期一
+            </div>
+            
+            <!-- 时间段和天气信息模拟 -->
+            <div class="flex justify-between items-center text-white opacity-75">
+                <div id="period" class="text-base font-medium">
+                    上午
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <span id="timezone" class="text-sm">GMT+8</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 次要信息卡片 -->
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full max-w-4xl">
+            
+            <!-- 毫秒计数器 -->
+            <div class="glass-morphism-dark rounded-2xl p-6 flex-1">
+                <h3 class="text-white text-sm font-medium mb-2 opacity-70">毫秒</h3>
+                <div id="milliseconds" class="text-3xl font-bold text-white">
+                    000
+                </div>
+            </div>
+            
+            <!-- 运行时间 -->
+            <div class="glass-morphism-dark rounded-2xl p-6 flex-1">
+                <h3 class="text-white text-sm font-medium mb-2 opacity-70">运行时间</h3>
+                <div id="uptime" class="text-lg font-semibold text-white">
+                    00:00:00
+                </div>
+            </div>
+            
+            <!-- 时间格式切换 -->
+            <div class="glass-morphism-dark rounded-2xl p-6 flex-1">
+                <h3 class="text-white text-sm font-medium mb-2 opacity-70">时间格式</h3>
+                <button id="format-toggle" class="text-lg font-semibold text-white hover:text-blue-200 transition-colors">
+                    24小时制
+                </button>
+            </div>
+        </div>
+        
+        <!-- 装饰性进度条 -->
+        <div class="w-full max-w-4xl mt-8">
+            <div class="glass-morphism rounded-full h-2 overflow-hidden">
+                <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-1000 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startTime = new Date();
+        let is24Hour = true;
+        
+        function updateTime() {
+            const now = new Date();
+            
+            // 获取时间组件
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            const milliseconds = now.getMilliseconds();
+            
+            // 12/24小时制转换
+            let displayHours = hours;
+            let period = '';
+            
+            if (!is24Hour) {
+                period = hours >= 12 ? 'PM' : 'AM';
+                displayHours = hours % 12;
+                if (displayHours === 0) displayHours = 12;
+            } else {
+                period = hours < 12 ? '上午' : '下午';
+            }
+            
+            // 格式化显示
+            const hoursStr = String(displayHours).padStart(2, '0');
+            const minutesStr = String(minutes).padStart(2, '0');
+            const secondsStr = String(seconds).padStart(2, '0');
+            const millisecondsStr = String(milliseconds).padStart(3, '0');
+            
+            // 更新显示
+            document.getElementById('hours').textContent = hoursStr;
+            document.getElementById('minutes').textContent = minutesStr;
+            document.getElementById('seconds').textContent = secondsStr;
+            document.getElementById('milliseconds').textContent = millisecondsStr;
+            document.getElementById('period').textContent = period;
+            
+            // 更新日期
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const weekday = weekdays[now.getDay()];
+            document.getElementById('date-display').textContent = `${year}年${month}月${date}日 ${weekday}`;
+            
+            // 更新运行时间
+            const elapsed = new Date(now - startTime);
+            const uptimeHours = Math.floor(elapsed.getTime() / 3600000);
+            const uptimeMinutes = Math.floor((elapsed.getTime() % 3600000) / 60000);
+            const uptimeSeconds = Math.floor((elapsed.getTime() % 60000) / 1000);
+            document.getElementById('uptime').textContent = 
+                `${String(uptimeHours).padStart(2, '0')}:${String(uptimeMinutes).padStart(2, '0')}:${String(uptimeSeconds).padStart(2, '0')}`;
+            
+            // 更新进度条（基于秒数）
+            const progressPercent = (seconds / 60) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+            
+            // 时区显示
+            const timezoneOffset = -now.getTimezoneOffset() / 60;
+            const timezoneString = timezoneOffset >= 0 ? `GMT+${timezoneOffset}` : `GMT${timezoneOffset}`;
+            document.getElementById('timezone').textContent = timezoneString;
+        }
+        
+        // 时间格式切换
+        document.getElementById('format-toggle').addEventListener('click', function() {
+            is24Hour = !is24Hour;
+            this.textContent = is24Hour ? '24小时制' : '12小时制';
+        });
+        
+        // 初始化并设置定时器
+        updateTime();
+        setInterval(updateTime, 50);
+        
+        // 添加键盘事件监听
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && window.switchToClock) {
+                window.switchToClock('home');
+            }
+            if (event.key === 'f' || event.key === 'F') {
+                document.getElementById('format-toggle').click();
+            }
+        });
+        
+        // 鼠标移动视差效果
+        document.addEventListener('mousemove', function(event) {
+            const mouseX = event.clientX / window.innerWidth;
+            const mouseY = event.clientY / window.innerHeight;
+            
+            const orbs = document.querySelectorAll('.orb');
+            orbs.forEach((orb, index) => {
+                const speed = (index + 1) * 0.5;
+                const x = mouseX * speed * 20;
+                const y = mouseY * speed * 20;
+                orb.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+
+</body>
+</html>

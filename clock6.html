@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模拟数字混合时钟</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .analog-clock {
+            width: 300px;
+            height: 300px;
+            border: 8px solid #2d3748;
+            border-radius: 50%;
+            position: relative;
+            background: radial-gradient(circle, #f7fafc 0%, #edf2f7 100%);
+            box-shadow: 
+                0 0 0 4px #e2e8f0,
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                inset 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .clock-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .hour-marker {
+            position: absolute;
+            width: 4px;
+            height: 30px;
+            background: #2d3748;
+            left: 50%;
+            top: 5px;
+            transform-origin: 50% 145px;
+            transform: translateX(-50%);
+        }
+        
+        .hour-marker.major {
+            width: 6px;
+            height: 40px;
+            background: #1a202c;
+        }
+        
+        .minute-marker {
+            position: absolute;
+            width: 1px;
+            height: 15px;
+            background: #718096;
+            left: 50%;
+            top: 5px;
+            transform-origin: 50% 145px;
+            transform: translateX(-50%);
+        }
+        
+        .hand {
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            transform-origin: 50% 100%;
+            border-radius: 2px;
+        }
+        
+        .hour-hand {
+            width: 6px;
+            height: 80px;
+            background: linear-gradient(to top, #2d3748, #4a5568);
+            margin-left: -3px;
+            z-index: 3;
+        }
+        
+        .minute-hand {
+            width: 4px;
+            height: 110px;
+            background: linear-gradient(to top, #2d3748, #4a5568);
+            margin-left: -2px;
+            z-index: 2;
+        }
+        
+        .second-hand {
+            width: 2px;
+            height: 120px;
+            background: #e53e3e;
+            margin-left: -1px;
+            z-index: 4;
+            transition: transform 0.1s ease-out;
+        }
+        
+        .center-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            background: #2d3748;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            border: 3px solid #f7fafc;
+        }
+        
+        .number {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2d3748;
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .digital-display {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            min-width: 300px;
+        }
+        
+        .back-button {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .pendulum {
+            position: absolute;
+            bottom: -100px;
+            left: 50%;
+            width: 2px;
+            height: 80px;
+            background: #8b5a2b;
+            transform-origin: 50% 0;
+            animation: pendulum-swing 2s ease-in-out infinite alternate;
+        }
+        
+        .pendulum::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: -8px;
+            width: 18px;
+            height: 18px;
+            background: radial-gradient(circle, #d4af37, #b8860b);
+            border-radius: 50%;
+        }
+        
+        @keyframes pendulum-swing {
+            0% { transform: translateX(-50%) rotate(-15deg); }
+            100% { transform: translateX(-50%) rotate(15deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
+    
+    <!-- 返回按钮 -->
+    <div class="absolute top-6 left-6 z-20">
+        <button onclick="switchToClock && switchToClock('home')" class="back-button text-gray-700 text-lg font-semibold px-6 py-3 rounded-xl flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            返回主页
+        </button>
+    </div>
+    
+    <!-- 标题 -->
+    <div class="absolute top-6 right-6 z-20">
+        <h1 class="text-2xl font-bold text-gray-700 font-['Playfair_Display']">经典混合时钟</h1>
+        <p class="text-sm text-gray-500 mt-1">Classic Hybrid Timepiece</p>
+    </div>
+
+    <!-- 主时钟区域 -->
+    <div class="flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12">
+        
+        <!-- 模拟时钟 -->
+        <div class="relative">
+            <div class="analog-clock" id="analog-clock">
+                
+                <!-- 时钟面 -->
+                <div class="clock-face">
+                    
+                    <!-- 小时刻度 -->
+                    <div class="hour-marker major" style="transform: translateX(-50%) rotate(0deg);"></div>
+                    <div class="hour-marker" style="transform: translateX(-50%) rotate(30deg);"></div>
+                    <div class="hour-marker" style="transform: translateX(-50%) rotate(60deg);"></div>
+                    <div class="hour-marker major" style="transform: translateX(-50%) rotate(90deg);"></div>
+                    <div class="hour-marker" style="transform: translateX(-50%) rotate(120deg);"></div>
+                    <div class="hour-marker" style="transform: translateX(-50%) rotate(150deg);"></div>
+                    <div class="hour-marker major" style="transform: translateX(-50%) rotate(180deg);"></div>
+                    <div class="hour-marker" style="transform: translateX(-50%) rotate(210deg);"></div>
+                    <div class="hour-marker" style="transform: translateX(-50%) rotate(240deg);"></div>
+                    <div class="hour-marker major" style="transform: translateX(-50%) rotate(270deg);"></div>
+                    <div class="hour-marker" style="transform: translateX(-50%) rotate(300deg);"></div>
+                    <div class="hour-marker" style="transform: translateX(-50%) rotate(330deg);"></div>
+                    
+                    <!-- 数字 -->
+                    <div class="number" style="top: 15px; left: 50%; transform: translateX(-50%);">12</div>
+                    <div class="number" style="top: 50%; right: 15px; transform: translateY(-50%);">3</div>
+                    <div class="number" style="bottom: 15px; left: 50%; transform: translateX(-50%);">6</div>
+                    <div class="number" style="top: 50%; left: 15px; transform: translateY(-50%);">9</div>
+                    
+                    <!-- 指针 -->
+                    <div class="hand hour-hand" id="hour-hand"></div>
+                    <div class="hand minute-hand" id="minute-hand"></div>
+                    <div class="hand second-hand" id="second-hand"></div>
+                    
+                    <!-- 中心点 -->
+                    <div class="center-dot"></div>
+                </div>
+                
+                <!-- 摆锤装饰 -->
+                <div class="pendulum"></div>
+            </div>
+        </div>
+        
+        <!-- 数字显示区域 -->
+        <div class="flex flex-col space-y-6">
+            
+            <!-- 主要数字时钟 -->
+            <div class="digital-display text-center">
+                <h2 class="text-lg font-semibold mb-4 opacity-90">数字时间显示</h2>
+                <div id="digital-time" class="text-5xl font-bold mb-2">00:00:00</div>
+                <div id="digital-date" class="text-lg opacity-80 mb-4">2024年1月1日 星期一</div>
+                <div class="flex justify-between text-sm opacity-70">
+                    <span id="period">上午</span>
+                    <span id="timezone">GMT+8</span>
+                </div>
+            </div>
+            
+            <!-- 详细信息卡片 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                    <h3 class="text-sm font-semibold text-gray-600 mb-2">毫秒精度</h3>
+                    <div id="milliseconds" class="text-2xl font-bold text-indigo-600">000</div>
+                </div>
+                
+                <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                    <h3 class="text-sm font-semibold text-gray-600 mb-2">Unix时间戳</h3>
+                    <div id="timestamp" class="text-lg font-mono text-gray-700">0</div>
+                </div>
+                
+                <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                    <h3 class="text-sm font-semibold text-gray-600 mb-2">星期几</h3>
+                    <div id="day-number" class="text-2xl font-bold text-purple-600">1</div>
+                </div>
+                
+                <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                    <h3 class="text-sm font-semibold text-gray-600 mb-2">年中第几天</h3>
+                    <div id="day-of-year" class="text-2xl font-bold text-pink-600">1</div>
+                </div>
+            </div>
+            
+            <!-- 时间格式切换 -->
+            <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                <h3 class="text-sm font-semibold text-gray-600 mb-3">时间格式</h3>
+                <div class="flex space-x-2">
+                    <button id="format-24h" class="px-3 py-1 rounded text-sm bg-indigo-500 text-white font-semibold">24小时</button>
+                    <button id="format-12h" class="px-3 py-1 rounded text-sm bg-gray-200 text-gray-700 font-semibold">12小时</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let is24Hour = true;
+        
+        function updateClock() {
+            const now = new Date();
+            
+            // 获取时间组件
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            const milliseconds = now.getMilliseconds();
+            
+            // 更新模拟时钟指针
+            const secondDeg = (seconds * 6) + (milliseconds * 0.006); // 平滑秒针
+            const minuteDeg = (minutes * 6) + (seconds * 0.1);
+            const hourDeg = ((hours % 12) * 30) + (minutes * 0.5);
+            
+            document.getElementById('second-hand').style.transform = `rotate(${secondDeg}deg)`;
+            document.getElementById('minute-hand').style.transform = `rotate(${minuteDeg}deg)`;
+            document.getElementById('hour-hand').style.transform = `rotate(${hourDeg}deg)`;
+            
+            // 更新数字时钟
+            let displayHours = hours;
+            let period = '上午';
+            
+            if (!is24Hour) {
+                period = hours >= 12 ? '下午' : '上午';
+                displayHours = hours % 12;
+                if (displayHours === 0) displayHours = 12;
+            } else {
+                period = hours < 12 ? '上午' : '下午';
+            }
+            
+            const timeString = `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            document.getElementById('digital-time').textContent = timeString;
+            document.getElementById('period').textContent = period;
+            
+            // 更新日期
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const weekday = weekdays[now.getDay()];
+            
+            document.getElementById('digital-date').textContent = `${year}年${month}月${date}日 ${weekday}`;
+            
+            // 更新其他信息
+            document.getElementById('milliseconds').textContent = String(milliseconds).padStart(3, '0');
+            document.getElementById('timestamp').textContent = Math.floor(now.getTime() / 1000);
+            document.getElementById('day-number').textContent = now.getDay() + 1;
+            
+            // 计算年中第几天
+            const start = new Date(year, 0, 0);
+            const diff = now - start;
+            const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('day-of-year').textContent = dayOfYear;
+            
+            // 更新时区
+            const timezoneOffset = -now.getTimezoneOffset() / 60;
+            const timezoneString = timezoneOffset >= 0 ? `GMT+${timezoneOffset}` : `GMT${timezoneOffset}`;
+            document.getElementById('timezone').textContent = timezoneString;
+        }
+        
+        // 格式切换功能
+        document.getElementById('format-24h').addEventListener('click', function() {
+            is24Hour = true;
+            this.classList.add('bg-indigo-500', 'text-white');
+            this.classList.remove('bg-gray-200', 'text-gray-700');
+            document.getElementById('format-12h').classList.remove('bg-indigo-500', 'text-white');
+            document.getElementById('format-12h').classList.add('bg-gray-200', 'text-gray-700');
+        });
+        
+        document.getElementById('format-12h').addEventListener('click', function() {
+            is24Hour = false;
+            this.classList.add('bg-indigo-500', 'text-white');
+            this.classList.remove('bg-gray-200', 'text-gray-700');
+            document.getElementById('format-24h').classList.remove('bg-indigo-500', 'text-white');
+            document.getElementById('format-24h').classList.add('bg-gray-200', 'text-gray-700');
+        });
+        
+        // 键盘事件
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && window.switchToClock) {
+                window.switchToClock('home');
+            }
+            if (event.key === 'f' || event.key === 'F') {
+                document.getElementById('format-12h').click();
+            }
+            if (event.key === 't' || event.key === 'T') {
+                document.getElementById('format-24h').click();
+            }
+        });
+        
+        // 鼠标悬停效果
+        document.getElementById('analog-clock').addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+        
+        document.getElementById('analog-clock').addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+        
+        // 初始化
+        updateClock();
+        setInterval(updateClock, 50); // 高频率更新以保证指针平滑
+        
+        // 点击模拟时钟切换格式
+        document.getElementById('analog-clock').addEventListener('click', function() {
+            if (is24Hour) {
+                document.getElementById('format-12h').click();
+            } else {
+                document.getElementById('format-24h').click();
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D立体等距数字时钟</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', monospace;
+            perspective: 1000px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .isometric-container {
+            transform-style: preserve-3d;
+            animation: float-rotation 20s linear infinite;
+        }
+        
+        @keyframes float-rotation {
+            0% { transform: rotateX(15deg) rotateY(0deg) rotateZ(0deg); }
+            100% { transform: rotateX(15deg) rotateY(360deg) rotateZ(0deg); }
+        }
+        
+        .digit-cube {
+            position: relative;
+            display: inline-block;
+            margin: 0 10px;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+        
+        .digit-cube:hover {
+            transform: rotateY(45deg) rotateX(15deg);
+        }
+        
+        .cube-face {
+            position: absolute;
+            width: 120px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .cube-front {
+            background: linear-gradient(145deg, #4f46e5, #3730a3);
+            transform: translateZ(60px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+        }
+        
+        .cube-back {
+            background: linear-gradient(145deg, #3730a3, #1e1b4b);
+            transform: translateZ(-60px) rotateY(180deg);
+        }
+        
+        .cube-right {
+            background: linear-gradient(145deg, #5b21b6, #3730a3);
+            transform: rotateY(90deg) translateZ(60px);
+            width: 120px;
+        }
+        
+        .cube-left {
+            background: linear-gradient(145deg, #3730a3, #1e1b4b);
+            transform: rotateY(-90deg) translateZ(60px);
+            width: 120px;
+        }
+        
+        .cube-top {
+            background: linear-gradient(145deg, #6366f1, #4f46e5);
+            transform: rotateX(90deg) translateZ(80px);
+            height: 120px;
+        }
+        
+        .cube-bottom {
+            background: linear-gradient(145deg, #1e1b4b, #0f172a);
+            transform: rotateX(-90deg) translateZ(80px);
+            height: 120px;
+        }
+        
+        .separator-cube {
+            position: relative;
+            display: inline-block;
+            margin: 0 20px;
+            transform-style: preserve-3d;
+        }
+        
+        .separator-dot {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            border-radius: 50%;
+            margin: 20px 0;
+            transform: translateZ(30px);
+            box-shadow: 
+                0 0 20px rgba(251, 191, 36, 0.6),
+                0 5px 10px rgba(0, 0, 0, 0.3);
+            animation: pulse-glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse-glow {
+            0% { 
+                box-shadow: 
+                    0 0 20px rgba(251, 191, 36, 0.6),
+                    0 5px 10px rgba(0, 0, 0, 0.3);
+            }
+            100% { 
+                box-shadow: 
+                    0 0 40px rgba(251, 191, 36, 0.9),
+                    0 5px 15px rgba(0, 0, 0, 0.4);
+            }
+        }
+        
+        .info-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: perspective(800px) rotateX(20deg);
+            transform-style: preserve-3d;
+        }
+        
+        .info-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            transform: translateZ(-1px);
+            border-radius: inherit;
+        }
+        
+        .geometric-decoration {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            transform-style: preserve-3d;
+            animation: geometric-rotate 15s linear infinite;
+        }
+        
+        @keyframes geometric-rotate {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+        }
+        
+        .tetrahedron {
+            position: relative;
+            width: 0;
+            height: 0;
+            transform-style: preserve-3d;
+        }
+        
+        .tetrahedron-face {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 43px solid rgba(139, 92, 246, 0.6);
+        }
+        
+        .back-button {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            transform: perspective(200px) rotateX(10deg);
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: perspective(200px) rotateX(10deg) translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .grid-floor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background: 
+                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: perspective(1000px) rotateX(75deg);
+            opacity: 0.3;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen relative overflow-hidden">
+    
+    <!-- 网格地板 -->
+    <div class="grid-floor"></div>
+    
+    <!-- 几何装饰 -->
+    <div class="geometric-decoration top-20 left-20">
+        <div class="tetrahedron">
+            <div class="tetrahedron-face" style="transform: rotateY(0deg) translateZ(14.43px);"></div>
+            <div class="tetrahedron-face" style="transform: rotateY(120deg) translateZ(14.43px);"></div>
+            <div class="tetrahedron-face" style="transform: rotateY(240deg) translateZ(14.43px);"></div>
+        </div>
+    </div>
+    
+    <div class="geometric-decoration top-32 right-20 animation-delay-500">
+        <div class="w-16 h-16 bg-gradient-to-r from-pink-500 to-violet-500 opacity-60" 
+             style="transform: rotateX(45deg) rotateY(45deg);"></div>
+    </div>
+    
+    <div class="geometric-decoration bottom-40 left-1/4 animation-delay-1000">
+        <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full opacity-70" 
+             style="transform: rotateX(30deg);"></div>
+    </div>
+    
+    <!-- 返回按钮 -->
+    <div class="absolute top-6 left-6 z-20">
+        <button onclick="switchToClock && switchToClock('home')" class="back-button text-white text-lg font-bold px-6 py-3 rounded-lg flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            返回主页
+        </button>
+    </div>
+    
+    <!-- 标题 -->
+    <div class="absolute top-6 right-6 z-20">
+        <h1 class="text-2xl font-bold text-white">3D 立体时钟</h1>
+        <p class="text-sm text-white opacity-80">Isometric Digital Clock</p>
+    </div>
+
+    <!-- 主时钟区域 -->
+    <div class="flex flex-col items-center justify-center min-h-screen px-4 relative z-10">
+        
+        <!-- 3D数字时钟 -->
+        <div class="isometric-container mb-12">
+            <div class="flex items-center justify-center">
+                
+                <!-- 小时十位 -->
+                <div class="digit-cube" id="hour-tens">
+                    <div class="cube-face cube-front">0</div>
+                    <div class="cube-face cube-back">0</div>
+                    <div class="cube-face cube-right"></div>
+                    <div class="cube-face cube-left"></div>
+                    <div class="cube-face cube-top"></div>
+                    <div class="cube-face cube-bottom"></div>
+                </div>
+                
+                <!-- 小时个位 -->
+                <div class="digit-cube" id="hour-ones">
+                    <div class="cube-face cube-front">0</div>
+                    <div class="cube-face cube-back">0</div>
+                    <div class="cube-face cube-right"></div>
+                    <div class="cube-face cube-left"></div>
+                    <div class="cube-face cube-top"></div>
+                    <div class="cube-face cube-bottom"></div>
+                </div>
+                
+                <!-- 分隔符 -->
+                <div class="separator-cube">
+                    <div class="separator-dot"></div>
+                    <div class="separator-dot"></div>
+                </div>
+                
+                <!-- 分钟十位 -->
+                <div class="digit-cube" id="min-tens">
+                    <div class="cube-face cube-front">0</div>
+                    <div class="cube-face cube-back">0</div>
+                    <div class="cube-face cube-right"></div>
+                    <div class="cube-face cube-left"></div>
+                    <div class="cube-face cube-top"></div>
+                    <div class="cube-face cube-bottom"></div>
+                </div>
+                
+                <!-- 分钟个位 -->
+                <div class="digit-cube" id="min-ones">
+                    <div class="cube-face cube-front">0</div>
+                    <div class="cube-face cube-back">0</div>
+                    <div class="cube-face cube-right"></div>
+                    <div class="cube-face cube-left"></div>
+                    <div class="cube-face cube-top"></div>
+                    <div class="cube-face cube-bottom"></div>
+                </div>
+                
+                <!-- 分隔符 -->
+                <div class="separator-cube">
+                    <div class="separator-dot"></div>
+                    <div class="separator-dot"></div>
+                </div>
+                
+                <!-- 秒钟十位 -->
+                <div class="digit-cube" id="sec-tens">
+                    <div class="cube-face cube-front">0</div>
+                    <div class="cube-face cube-back">0</div>
+                    <div class="cube-face cube-right"></div>
+                    <div class="cube-face cube-left"></div>
+                    <div class="cube-face cube-top"></div>
+                    <div class="cube-face cube-bottom"></div>
+                </div>
+                
+                <!-- 秒钟个位 -->
+                <div class="digit-cube" id="sec-ones">
+                    <div class="cube-face cube-front">0</div>
+                    <div class="cube-face cube-back">0</div>
+                    <div class="cube-face cube-right"></div>
+                    <div class="cube-face cube-left"></div>
+                    <div class="cube-face cube-top"></div>
+                    <div class="cube-face cube-bottom"></div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- 信息面板 -->
+        <div class="info-panel rounded-xl p-6 mb-8 max-w-4xl w-full">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-white relative z-10">
+                
+                <!-- 日期信息 -->
+                <div class="text-center">
+                    <h3 class="text-lg font-bold mb-2 opacity-90">日期信息</h3>
+                    <div id="date-display" class="text-xl font-semibold mb-2">2024年1月1日</div>
+                    <div id="weekday" class="text-lg opacity-80">星期一</div>
+                </div>
+                
+                <!-- 时间详情 -->
+                <div class="text-center">
+                    <h3 class="text-lg font-bold mb-2 opacity-90">时间详情</h3>
+                    <div class="flex justify-center items-center space-x-4 mb-2">
+                        <div>
+                            <div class="text-sm opacity-70">毫秒</div>
+                            <div id="milliseconds" class="text-xl font-bold">000</div>
+                        </div>
+                        <div>
+                            <div class="text-sm opacity-70">时区</div>
+                            <div id="timezone" class="text-lg font-semibold">GMT+8</div>
+                        </div>
+                    </div>
+                    <div id="period" class="text-lg opacity-80">上午</div>
+                </div>
+                
+                <!-- 系统信息 -->
+                <div class="text-center">
+                    <h3 class="text-lg font-bold mb-2 opacity-90">系统信息</h3>
+                    <div id="timestamp" class="text-lg font-mono mb-2">0</div>
+                    <div class="text-sm opacity-70">Unix 时间戳</div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="flex flex-wrap justify-center gap-4">
+            <button id="rotate-toggle" class="back-button text-white px-6 py-3 rounded-lg font-semibold">
+                暂停旋转
+            </button>
+            <button id="perspective-toggle" class="back-button text-white px-6 py-3 rounded-lg font-semibold">
+                切换视角
+            </button>
+        </div>
+        
+        <!-- 使用说明 -->
+        <div class="mt-8 text-center text-white opacity-70">
+            <p class="text-sm">悬停数字立方体查看3D效果 • 点击按钮控制动画</p>
+        </div>
+    </div>
+
+    <script>
+        let rotationEnabled = true;
+        let perspectiveMode = 0; // 0: 等距, 1: 正视, 2: 侧视
+        
+        function updateTime() {
+            const now = new Date();
+            
+            // 获取时间组件
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            const milliseconds = now.getMilliseconds();
+            
+            // 分离数字
+            const hourTens = Math.floor(hours / 10);
+            const hourOnes = hours % 10;
+            const minTens = Math.floor(minutes / 10);
+            const minOnes = minutes % 10;
+            const secTens = Math.floor(seconds / 10);
+            const secOnes = seconds % 10;
+            
+            // 更新立方体数字
+            updateCube('hour-tens', hourTens);
+            updateCube('hour-ones', hourOnes);
+            updateCube('min-tens', minTens);
+            updateCube('min-ones', minOnes);
+            updateCube('sec-tens', secTens);
+            updateCube('sec-ones', secOnes);
+            
+            // 更新其他信息
+            document.getElementById('milliseconds').textContent = String(milliseconds).padStart(3, '0');
+            
+            // 更新日期
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const weekday = weekdays[now.getDay()];
+            
+            document.getElementById('date-display').textContent = `${year}年${month}月${date}日`;
+            document.getElementById('weekday').textContent = weekday;
+            
+            // 更新时间段
+            const period = hours < 12 ? '上午' : '下午';
+            document.getElementById('period').textContent = period;
+            
+            // 更新时区
+            const timezoneOffset = -now.getTimezoneOffset() / 60;
+            const timezoneString = timezoneOffset >= 0 ? `GMT+${timezoneOffset}` : `GMT${timezoneOffset}`;
+            document.getElementById('timezone').textContent = timezoneString;
+            
+            // 更新时间戳
+            document.getElementById('timestamp').textContent = Math.floor(now.getTime() / 1000);
+        }
+        
+        function updateCube(cubeId, digit) {
+            const cube = document.getElementById(cubeId);
+            const faces = cube.querySelectorAll('.cube-face');
+            
+            // 更新所有面的数字
+            faces.forEach(face => {
+                if (face.classList.contains('cube-front') || face.classList.contains('cube-back')) {
+                    if (face.textContent !== digit.toString()) {
+                        face.textContent = digit;
+                        // 添加更新动画
+                        face.style.transform += ' scale(1.1)';
+                        setTimeout(() => {
+                            face.style.transform = face.style.transform.replace(' scale(1.1)', '');
+                        }, 200);
+                    }
+                }
+            });
+        }
+        
+        // 控制旋转
+        document.getElementById('rotate-toggle').addEventListener('click', function() {
+            const container = document.querySelector('.isometric-container');
+            rotationEnabled = !rotationEnabled;
+            
+            if (rotationEnabled) {
+                container.style.animationPlayState = 'running';
+                this.textContent = '暂停旋转';
+            } else {
+                container.style.animationPlayState = 'paused';
+                this.textContent = '开始旋转';
+            }
+        });
+        
+        // 切换视角
+        document.getElementById('perspective-toggle').addEventListener('click', function() {
+            const container = document.querySelector('.isometric-container');
+            perspectiveMode = (perspectiveMode + 1) % 3;
+            
+            switch (perspectiveMode) {
+                case 0:
+                    container.style.transform = 'rotateX(15deg) rotateY(0deg)';
+                    this.textContent = '等距视角';
+                    break;
+                case 1:
+                    container.style.transform = 'rotateX(0deg) rotateY(0deg)';
+                    this.textContent = '正视视角';
+                    break;
+                case 2:
+                    container.style.transform = 'rotateX(15deg) rotateY(45deg)';
+                    this.textContent = '侧视视角';
+                    break;
+            }
+            
+            // 暂时停止自动旋转动画
+            container.style.animation = 'none';
+            setTimeout(() => {
+                if (rotationEnabled) {
+                    container.style.animation = 'float-rotation 20s linear infinite';
+                }
+            }, 1000);
+        });
+        
+        // 键盘控制
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && window.switchToClock) {
+                window.switchToClock('home');
+            }
+            if (event.key === 'r' || event.key === 'R') {
+                document.getElementById('rotate-toggle').click();
+            }
+            if (event.key === 'p' || event.key === 'P') {
+                document.getElementById('perspective-toggle').click();
+            }
+        });
+        
+        // 鼠标移动视差效果
+        document.addEventListener('mousemove', function(event) {
+            const mouseX = (event.clientX / window.innerWidth - 0.5) * 20;
+            const mouseY = (event.clientY / window.innerHeight - 0.5) * 20;
+            
+            const decorations = document.querySelectorAll('.geometric-decoration');
+            decorations.forEach((decoration, index) => {
+                const speed = (index + 1) * 0.3;
+                decoration.style.transform += ` translate(${mouseX * speed}px, ${mouseY * speed}px)`;
+            });
+        });
+        
+        // 初始化
+        updateTime();
+        setInterval(updateTime, 50);
+        
+        // 随机触发立方体特效
+        setInterval(() => {
+            const cubes = document.querySelectorAll('.digit-cube');
+            const randomCube = cubes[Math.floor(Math.random() * cubes.length)];
+            randomCube.style.transform += ' scale(1.1)';
+            setTimeout(() => {
+                randomCube.style.transform = randomCube.style.transform.replace(' scale(1.1)', '');
+            }, 300);
+        }, 5000);
+    </script>
+
+</body>
+</html>

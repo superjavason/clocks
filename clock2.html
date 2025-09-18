@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极简现代扁平数字时钟</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .minimal-text {
+            font-family: 'Rajdhani', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .time-transition {
+            animation: fade-in 0.3s ease-in-out;
+        }
+        
+        @keyframes fade-in {
+            from { opacity: 0.7; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .color-transition {
+            transition: color 2s ease-in-out;
+        }
+        
+        .back-button {
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            transform: translateX(-5px);
+        }
+        
+        .time-separator {
+            animation: blink 2s ease-in-out infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
+        .subtle-shadow {
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    
+    <!-- 返回按钮 -->
+    <div class="absolute top-6 left-6 z-10">
+        <button onclick="switchToClock && switchToClock('home')" class="back-button text-gray-600 text-lg font-medium hover:text-gray-800 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            返回主页
+        </button>
+    </div>
+    
+    <!-- 标题 -->
+    <div class="absolute top-6 right-6 z-10">
+        <h1 class="text-xl font-light text-gray-600 minimal-text">极简现代时钟</h1>
+    </div>
+
+    <!-- 主时钟区域 -->
+    <div class="flex flex-col items-center justify-center min-h-screen px-4">
+        
+        <!-- 主要时间显示 -->
+        <div class="text-center mb-12">
+            <div id="main-clock" class="minimal-text text-[8rem] md:text-[12rem] lg:text-[16rem] font-light text-gray-800 subtle-shadow leading-none">
+                <span id="hours">00</span><span class="time-separator">:</span><span id="minutes">00</span>
+            </div>
+            <div id="seconds" class="minimal-text text-4xl md:text-6xl font-light text-gray-500 mt-4 color-transition">
+                00
+            </div>
+        </div>
+        
+        <!-- 日期显示 -->
+        <div id="date-display" class="minimal-text text-2xl md:text-3xl font-light text-gray-600 mb-8 floating">
+            2024年1月1日 星期一
+        </div>
+        
+        <!-- 时间段指示器 -->
+        <div id="period-indicator" class="minimal-text text-lg font-medium text-gray-400 mb-8">
+            上午
+        </div>
+        
+        <!-- 简约装饰线 -->
+        <div class="flex items-center space-x-4">
+            <div class="w-8 h-px bg-gray-300"></div>
+            <div id="current-second-dot" class="w-2 h-2 rounded-full bg-gray-400 transition-colors duration-300"></div>
+            <div class="w-8 h-px bg-gray-300"></div>
+        </div>
+        
+        <!-- 当前时区 -->
+        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+            <div class="minimal-text text-sm font-light text-gray-400">
+                <span id="timezone">GMT+8</span> • <span id="milliseconds">000</span>ms
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastSecond = -1;
+        
+        function updateTime() {
+            const now = new Date();
+            
+            // 获取时间组件
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            const milliseconds = now.getMilliseconds();
+            
+            // 格式化时间
+            const hoursStr = String(hours).padStart(2, '0');
+            const minutesStr = String(minutes).padStart(2, '0');
+            const secondsStr = String(seconds).padStart(2, '0');
+            const millisecondsStr = String(milliseconds).padStart(3, '0');
+            
+            // 更新小时和分钟
+            document.getElementById('hours').textContent = hoursStr;
+            document.getElementById('minutes').textContent = minutesStr;
+            
+            // 更新秒数，添加颜色变化效果
+            const secondsElement = document.getElementById('seconds');
+            if (seconds !== lastSecond) {
+                secondsElement.classList.add('time-transition');
+                secondsElement.textContent = secondsStr;
+                
+                // 根据秒数变化颜色
+                const colorIntensity = (seconds * 4.25); // 0-255 范围
+                secondsElement.style.color = `rgb(${100 + colorIntensity/4}, ${100 + colorIntensity/3}, ${150 + colorIntensity/2})`;
+                
+                setTimeout(() => {
+                    secondsElement.classList.remove('time-transition');
+                }, 300);
+                
+                lastSecond = seconds;
+            }
+            
+            // 更新毫秒
+            document.getElementById('milliseconds').textContent = millisecondsStr;
+            
+            // 更新时间段指示器
+            const period = hours < 12 ? '上午' : '下午';
+            document.getElementById('period-indicator').textContent = period;
+            
+            // 更新当前秒数指示点的颜色
+            const dot = document.getElementById('current-second-dot');
+            const hue = (seconds * 6); // 0-360 度
+            dot.style.backgroundColor = `hsl(${hue}, 50%, 60%)`;
+            
+            // 更新日期
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const weekday = weekdays[now.getDay()];
+            const dateString = `${year}年${month}月${date}日 ${weekday}`;
+            
+            document.getElementById('date-display').textContent = dateString;
+            
+            // 更新时区
+            const timezoneOffset = -now.getTimezoneOffset() / 60;
+            const timezoneString = timezoneOffset >= 0 ? `GMT+${timezoneOffset}` : `GMT${timezoneOffset}`;
+            document.getElementById('timezone').textContent = timezoneString;
+        }
+        
+        // 初始化并设置定时器
+        updateTime();
+        setInterval(updateTime, 50);
+        
+        // 添加键盘事件监听
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && window.switchToClock) {
+                window.switchToClock('home');
+            }
+        });
+        
+        // 添加鼠标移动效果
+        document.addEventListener('mousemove', function(event) {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const moveX = (event.clientX - centerX) / 50;
+            const moveY = (event.clientY - centerY) / 50;
+            
+            const mainClock = document.getElementById('main-clock');
+            mainClock.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        });
+        
+        // 点击切换样式
+        let styleIndex = 0;
+        const styles = ['text-gray-800', 'text-blue-600', 'text-purple-600', 'text-green-600'];
+        
+        document.addEventListener('click', function() {
+            const mainClock = document.getElementById('main-clock');
+            mainClock.classList.remove(styles[styleIndex]);
+            styleIndex = (styleIndex + 1) % styles.length;
+            mainClock.classList.add(styles[styleIndex]);
+        });
+    </script>
+
+</body>
+</html>

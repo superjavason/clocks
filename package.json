@@ -1,0 +1,24 @@
+{
+  "name": "digital-clocks",
+  "version": "1.0.0",
+  "description": "10种超级好看的数字时钟网页",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+    "build": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "clock",
+    "digital-clock",
+    "tailwindcss",
+    "javascript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0"
+  }
+}

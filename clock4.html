@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复古翻牌数字时钟</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        .flip-clock {
+            font-family: 'Orbitron', monospace;
+            perspective: 400px;
+        }
+        
+        .flip-card {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 120px;
+            margin: 0 5px;
+        }
+        
+        .flip-card-inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+        
+        .flip-card.flipping .flip-card-inner {
+            transform: rotateX(-180deg);
+        }
+        
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .flip-card-back {
+            transform: rotateX(180deg);
+            background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+        }
+        
+        /* 中间分割线效果 */
+        .flip-card-front::before,
+        .flip-card-back::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #333;
+            transform: translateY(-0.5px);
+        }
+        
+        /* 翻牌声音视觉效果 */
+        .flip-card.flipping {
+            animation: shake 0.8s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-2px); }
+            75% { transform: translateY(1px); }
+        }
+        
+        /* 背景装饰 */
+        .vintage-bg {
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+        }
+        
+        .separator {
+            color: #666;
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 0 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .vintage-label {
+            font-family: 'Orbitron', monospace;
+            color: #888;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        
+        .back-button {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+<body class="min-h-screen vintage-bg flex items-center justify-center">
+    
+    <!-- 返回按钮 -->
+    <div class="absolute top-6 left-6 z-20">
+        <button onclick="switchToClock && switchToClock('home')" class="back-button text-white text-lg font-semibold px-4 py-2 rounded-xl flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            返回主页
+        </button>
+    </div>
+    
+    <!-- 标题 -->
+    <div class="absolute top-6 right-6 z-20">
+        <h1 class="text-white text-xl font-bold vintage-label">复古翻牌时钟</h1>
+    </div>
+
+    <!-- 主时钟容器 -->
+    <div class="text-center">
+        
+        <!-- 品牌标识 -->
+        <div class="mb-8">
+            <div class="vintage-label text-2xl mb-2">DIGITAL FLIP CLOCK</div>
+            <div class="vintage-label text-sm opacity-60">VINTAGE COLLECTION</div>
+        </div>
+        
+        <!-- 翻牌时钟 -->
+        <div class="flip-clock flex items-center justify-center mb-8">
+            
+            <!-- 小时 -->
+            <div class="flip-card" id="hour-tens">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">0</div>
+                    <div class="flip-card-back">0</div>
+                </div>
+            </div>
+            
+            <div class="flip-card" id="hour-ones">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">0</div>
+                    <div class="flip-card-back">0</div>
+                </div>
+            </div>
+            
+            <!-- 分隔符 -->
+            <div class="separator animate-pulse">:</div>
+            
+            <!-- 分钟 -->
+            <div class="flip-card" id="min-tens">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">0</div>
+                    <div class="flip-card-back">0</div>
+                </div>
+            </div>
+            
+            <div class="flip-card" id="min-ones">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">0</div>
+                    <div class="flip-card-back">0</div>
+                </div>
+            </div>
+            
+            <!-- 分隔符 -->
+            <div class="separator animate-pulse">:</div>
+            
+            <!-- 秒钟 -->
+            <div class="flip-card" id="sec-tens">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">0</div>
+                    <div class="flip-card-back">0</div>
+                </div>
+            </div>
+            
+            <div class="flip-card" id="sec-ones">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">0</div>
+                    <div class="flip-card-back">0</div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- 标签 -->
+        <div class="flex justify-center space-x-20 mb-8">
+            <div class="vintage-label">HOURS</div>
+            <div class="vintage-label">MINUTES</div>
+            <div class="vintage-label">SECONDS</div>
+        </div>
+        
+        <!-- 日期显示 -->
+        <div id="date-display" class="vintage-label text-lg mb-4">
+            2024年1月1日 星期一
+        </div>
+        
+        <!-- 装饰性信息 -->
+        <div class="flex justify-center items-center space-x-8 opacity-60">
+            <div class="vintage-label text-xs">
+                <div>LOCAL TIME</div>
+                <div id="timezone">GMT+8</div>
+            </div>
+            <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
+            <div class="vintage-label text-xs">
+                <div>FORMAT</div>
+                <div>24H</div>
+            </div>
+            <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
+            <div class="vintage-label text-xs">
+                <div>STATUS</div>
+                <div class="text-green-400">ACTIVE</div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // 当前显示的时间值
+        let currentTime = {
+            hourTens: 0, hourOnes: 0,
+            minTens: 0, minOnes: 0,
+            secTens: 0, secOnes: 0
+        };
+        
+        // 翻牌动画函数
+        function flipCard(cardId, newValue) {
+            const card = document.getElementById(cardId);
+            const front = card.querySelector('.flip-card-front');
+            const back = card.querySelector('.flip-card-back');
+            
+            // 设置新值到背面
+            back.textContent = newValue;
+            
+            // 添加翻转动画
+            card.classList.add('flipping');
+            
+            // 动画完成后更新正面并移除动画类
+            setTimeout(() => {
+                front.textContent = newValue;
+                card.classList.remove('flipping');
+            }, 400);
+        }
+        
+        // 更新时间函数
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            
+            // 分离各位数字
+            const newTime = {
+                hourTens: Math.floor(hours / 10),
+                hourOnes: hours % 10,
+                minTens: Math.floor(minutes / 10),
+                minOnes: minutes % 10,
+                secTens: Math.floor(seconds / 10),
+                secOnes: seconds % 10
+            };
+            
+            // 检查每个位置是否需要翻转
+            if (newTime.hourTens !== currentTime.hourTens) {
+                flipCard('hour-tens', newTime.hourTens);
+            }
+            if (newTime.hourOnes !== currentTime.hourOnes) {
+                flipCard('hour-ones', newTime.hourOnes);
+            }
+            if (newTime.minTens !== currentTime.minTens) {
+                flipCard('min-tens', newTime.minTens);
+            }
+            if (newTime.minOnes !== currentTime.minOnes) {
+                flipCard('min-ones', newTime.minOnes);
+            }
+            if (newTime.secTens !== currentTime.secTens) {
+                flipCard('sec-tens', newTime.secTens);
+            }
+            if (newTime.secOnes !== currentTime.secOnes) {
+                flipCard('sec-ones', newTime.secOnes);
+            }
+            
+            // 更新当前时间
+            currentTime = newTime;
+            
+            // 更新日期
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const weekday = weekdays[now.getDay()];
+            document.getElementById('date-display').textContent = `${year}年${month}月${date}日 ${weekday}`;
+            
+            // 更新时区
+            const timezoneOffset = -now.getTimezoneOffset() / 60;
+            const timezoneString = timezoneOffset >= 0 ? `GMT+${timezoneOffset}` : `GMT${timezoneOffset}`;
+            document.getElementById('timezone').textContent = timezoneString;
+        }
+        
+        // 初始化显示
+        function initializeDisplay() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            
+            // 初始化所有卡片
+            document.getElementById('hour-tens').querySelector('.flip-card-front').textContent = Math.floor(hours / 10);
+            document.getElementById('hour-ones').querySelector('.flip-card-front').textContent = hours % 10;
+            document.getElementById('min-tens').querySelector('.flip-card-front').textContent = Math.floor(minutes / 10);
+            document.getElementById('min-ones').querySelector('.flip-card-front').textContent = minutes % 10;
+            document.getElementById('sec-tens').querySelector('.flip-card-front').textContent = Math.floor(seconds / 10);
+            document.getElementById('sec-ones').querySelector('.flip-card-front').textContent = seconds % 10;
+            
+            currentTime = {
+                hourTens: Math.floor(hours / 10),
+                hourOnes: hours % 10,
+                minTens: Math.floor(minutes / 10),
+                minOnes: minutes % 10,
+                secTens: Math.floor(seconds / 10),
+                secOnes: seconds % 10
+            };
+        }
+        
+        // 初始化
+        initializeDisplay();
+        updateTime();
+        
+        // 设置定时器
+        setInterval(updateTime, 1000);
+        
+        // 键盘事件
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && window.switchToClock) {
+                window.switchToClock('home');
+            }
+        });
+        
+        // 点击测试翻转效果
+        document.querySelectorAll('.flip-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const front = this.querySelector('.flip-card-front');
+                const currentValue = parseInt(front.textContent);
+                const newValue = (currentValue + 1) % 10;
+                flipCard(this.id, newValue);
+            });
+        });
+    </script>
+
+</body>
+</html>

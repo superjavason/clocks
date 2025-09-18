@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>终端控制台数字时钟</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #000000;
+            color: #00ff00;
+            overflow: hidden;
+        }
+        
+        .terminal-container {
+            background: #000000;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 0, 0.3),
+                inset 0 0 20px rgba(0, 255, 0, 0.1);
+            position: relative;
+        }
+        
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #00ff00;
+            margin-bottom: 20px;
+        }
+        
+        .terminal-title {
+            color: #00ff00;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .terminal-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .control-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .control-dot.close { background: #ff5555; }
+        .control-dot.minimize { background: #ffff55; }
+        .control-dot.maximize { background: #55ff55; }
+        
+        .terminal-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+        
+        .terminal-prompt {
+            color: #55ff55;
+            margin-right: 8px;
+        }
+        
+        .terminal-command {
+            color: #ffff55;
+        }
+        
+        .terminal-output {
+            color: #ffffff;
+        }
+        
+        .terminal-error {
+            color: #ff5555;
+        }
+        
+        .terminal-info {
+            color: #55ffff;
+        }
+        
+        .terminal-cursor {
+            background: #00ff00;
+            color: #000000;
+            animation: cursor-blink 1s infinite;
+            margin-left: 2px;
+            padding: 0 2px;
+        }
+        
+        @keyframes cursor-blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .time-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            text-align: center;
+            font-family: 'Source Code Pro', monospace;
+            margin: 20px 0;
+        }
+        
+        .scan-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(0, 255, 0, 0.03) 2px,
+                rgba(0, 255, 0, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .flicker {
+            animation: screen-flicker 0.15s infinite linear alternate;
+        }
+        
+        @keyframes screen-flicker {
+            0% { opacity: 1; }
+            100% { opacity: 0.95; }
+        }
+        
+        .typewriter {
+            overflow: hidden;
+            border-right: 2px solid #00ff00;
+            white-space: nowrap;
+            animation: typing 2s steps(20) infinite;
+        }
+        
+        @keyframes typing {
+            0% { width: 0; }
+            50% { width: 100%; }
+            100% { width: 0; }
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #001100;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+            z-index: 20;
+        }
+        
+        .back-button:hover {
+            background: #002200;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #001100;
+            border: 1px solid #00ff00;
+            margin: 10px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #00ff00;
+            transition: width 1s ease;
+            box-shadow: 0 0 5px #00ff00;
+        }
+        
+        .system-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-block {
+            border: 1px solid #00ff00;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+        }
+        
+        .stat-label {
+            color: #55ff55;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 flicker">
+    
+    <!-- 扫描线效果 -->
+    <div class="scan-lines"></div>
+    
+    <!-- 返回按钮 -->
+    <div class="back-button px-4 py-2 rounded">
+        <button onclick="switchToClock && switchToClock('home')" class="flex items-center">
+            <span class="mr-2">&lt;</span> exit
+        </button>
+    </div>
+
+    <!-- 主终端窗口 -->
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="terminal-container max-w-4xl w-full">
+            
+            <!-- 终端头部 -->
+            <div class="terminal-header">
+                <div class="terminal-title">Terminal - Digital Clock System v2.1.0</div>
+                <div class="terminal-controls">
+                    <div class="control-dot close"></div>
+                    <div class="control-dot minimize"></div>
+                    <div class="control-dot maximize"></div>
+                </div>
+            </div>
+            
+            <!-- 终端内容 -->
+            <div id="terminal-content">
+                
+                <!-- 系统启动信息 -->
+                <div class="terminal-line">
+                    <span class="terminal-prompt">root@clocksystem:~$</span>
+                    <span class="terminal-command">systemctl start digital-clock.service</span>
+                </div>
+                
+                <div class="terminal-line">
+                    <span class="terminal-info">[INFO]</span>
+                    <span class="terminal-output">Digital Clock Service starting...</span>
+                </div>
+                
+                <div class="terminal-line">
+                    <span class="terminal-info">[INFO]</span>
+                    <span class="terminal-output">Loading time modules... OK</span>
+                </div>
+                
+                <div class="terminal-line">
+                    <span class="terminal-info">[INFO]</span>
+                    <span class="terminal-output">Synchronizing with time server... OK</span>
+                </div>
+                
+                <div class="terminal-line">
+                    <span class="terminal-info">[INFO]</span>
+                    <span class="terminal-output">Service started successfully</span>
+                </div>
+                
+                <div class="terminal-line">
+                    <span class="terminal-prompt">root@clocksystem:~$</span>
+                    <span class="terminal-command">clock --display --format=digital</span>
+                </div>
+                
+                <!-- 时钟显示区域 -->
+                <div class="terminal-line">
+                    <span class="terminal-output">Current Time:</span>
+                </div>
+                
+                <div class="time-display" id="main-time">
+                    00:00:00
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="terminal-line">
+                    <span class="terminal-output">Second Progress:</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                </div>
+                
+                <!-- 系统信息 -->
+                <div class="terminal-line">
+                    <span class="terminal-prompt">root@clocksystem:~$</span>
+                    <span class="terminal-command">system-info --time-details</span>
+                </div>
+                
+                <div class="system-stats">
+                    <div class="stat-block">
+                        <div class="stat-label">DATE</div>
+                        <div id="current-date" class="stat-value">2024-01-01</div>
+                    </div>
+                    
+                    <div class="stat-block">
+                        <div class="stat-label">WEEKDAY</div>
+                        <div id="weekday" class="stat-value">MONDAY</div>
+                    </div>
+                    
+                    <div class="stat-block">
+                        <div class="stat-label">TIMEZONE</div>
+                        <div id="timezone" class="stat-value">GMT+8</div>
+                    </div>
+                    
+                    <div class="stat-block">
+                        <div class="stat-label">UPTIME</div>
+                        <div id="uptime" class="stat-value">00:00:00</div>
+                    </div>
+                    
+                    <div class="stat-block">
+                        <div class="stat-label">MILLISECONDS</div>
+                        <div id="milliseconds" class="stat-value">000</div>
+                    </div>
+                    
+                    <div class="stat-block">
+                        <div class="stat-label">UNIX TIMESTAMP</div>
+                        <div id="timestamp" class="stat-value">0</div>
+                    </div>
+                </div>
+                
+                <!-- 实时日志 -->
+                <div class="terminal-line" style="margin-top: 20px;">
+                    <span class="terminal-prompt">root@clocksystem:~$</span>
+                    <span class="terminal-command">tail -f /var/log/clock.log</span>
+                </div>
+                
+                <div id="log-output">
+                    <!-- 动态生成的日志内容 -->
+                </div>
+                
+                <!-- 命令行输入 -->
+                <div class="terminal-line">
+                    <span class="terminal-prompt">root@clocksystem:~$</span>
+                    <span id="current-command" class="terminal-command typewriter">monitoring active...</span>
+                    <span class="terminal-cursor">_</span>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startTime = new Date();
+        let logLines = [];
+        const maxLogLines = 5;
+        
+        // 终端命令模拟
+        const commands = [
+            'monitoring active...',
+            'checking time sync...',
+            'updating display...',
+            'system status: OK',
+            'memory usage: 12%',
+            'cpu load: 0.3',
+            'network: connected'
+        ];
+        let commandIndex = 0;
+        
+        function updateTime() {
+            const now = new Date();
+            
+            // 更新主时钟
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const timeString = `${hours}:${minutes}:${seconds}`;
+            
+            document.getElementById('main-time').textContent = timeString;
+            
+            // 更新详细信息
+            document.getElementById('milliseconds').textContent = String(now.getMilliseconds()).padStart(3, '0');
+            
+            // 更新日期
+            const weekdays = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const weekday = weekdays[now.getDay()];
+            
+            document.getElementById('current-date').textContent = `${year}-${month}-${date}`;
+            document.getElementById('weekday').textContent = weekday;
+            
+            // 更新时区
+            const timezoneOffset = -now.getTimezoneOffset() / 60;
+            const timezoneString = timezoneOffset >= 0 ? `GMT+${timezoneOffset}` : `GMT${timezoneOffset}`;
+            document.getElementById('timezone').textContent = timezoneString;
+            
+            // 更新运行时间
+            const elapsed = now - startTime;
+            const uptimeHours = Math.floor(elapsed / 3600000);
+            const uptimeMinutes = Math.floor((elapsed % 3600000) / 60000);
+            const uptimeSeconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('uptime').textContent = 
+                `${String(uptimeHours).padStart(2, '0')}:${String(uptimeMinutes).padStart(2, '0')}:${String(uptimeSeconds).padStart(2, '0')}`;
+            
+            // 更新时间戳
+            document.getElementById('timestamp').textContent = Math.floor(now.getTime() / 1000);
+            
+            // 更新进度条
+            const progressPercent = (now.getSeconds() / 60) * 100;
+            document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+        }
+        
+        function addLogLine(message, type = 'info') {
+            const now = new Date();
+            const timestamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            const logEntry = {
+                timestamp,
+                message,
+                type
+            };
+            
+            logLines.unshift(logEntry);
+            if (logLines.length > maxLogLines) {
+                logLines = logLines.slice(0, maxLogLines);
+            }
+            
+            updateLogDisplay();
+        }
+        
+        function updateLogDisplay() {
+            const logOutput = document.getElementById('log-output');
+            logOutput.innerHTML = '';
+            
+            logLines.forEach(entry => {
+                const logLine = document.createElement('div');
+                logLine.className = 'terminal-line';
+                
+                let typeColor = 'terminal-info';
+                let typeLabel = '[INFO]';
+                
+                if (entry.type === 'error') {
+                    typeColor = 'terminal-error';
+                    typeLabel = '[ERROR]';
+                } else if (entry.type === 'warning') {
+                    typeColor = 'terminal-command';
+                    typeLabel = '[WARN]';
+                }
+                
+                logLine.innerHTML = `
+                    <span class="${typeColor}">${entry.timestamp} ${typeLabel}</span>
+                    <span class="terminal-output">${entry.message}</span>
+                `;
+                
+                logOutput.appendChild(logLine);
+            });
+        }
+        
+        // 模拟系统日志
+        function generateRandomLog() {
+            const logMessages = [
+                'Clock service heartbeat',
+                'Time synchronization completed',
+                'Display refresh successful',
+                'System health check: OK',
+                'Memory cleanup executed',
+                'Cache optimization complete',
+                'Network time protocol sync',
+                'Database connection stable',
+                'User interface updated',
+                'Performance metrics logged'
+            ];
+            
+            const logTypes = ['info', 'info', 'info', 'info', 'warning', 'error'];
+            const message = logMessages[Math.floor(Math.random() * logMessages.length)];
+            const type = logTypes[Math.floor(Math.random() * logTypes.length)];
+            
+            addLogLine(message, type);
+        }
+        
+        // 更新命令行显示
+        function updateCommand() {
+            const currentCommandElement = document.getElementById('current-command');
+            currentCommandElement.textContent = commands[commandIndex];
+            commandIndex = (commandIndex + 1) % commands.length;
+        }
+        
+        // 键盘事件
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && window.switchToClock) {
+                window.switchToClock('home');
+            }
+            
+            // 模拟终端命令输入
+            if (event.key === 'Enter') {
+                addLogLine('User command executed', 'info');
+            }
+            
+            // 清屏效果
+            if (event.key === 'c' && (event.ctrlKey || event.metaKey)) {
+                logLines = [];
+                updateLogDisplay();
+                addLogLine('Terminal cleared', 'info');
+            }
+        });
+        
+        // 初始化日志
+        addLogLine('Digital clock service initialized', 'info');
+        addLogLine('All systems operational', 'info');
+        
+        // 定时器设置
+        setInterval(updateTime, 50);
+        setInterval(generateRandomLog, 3000);
+        setInterval(updateCommand, 4000);
+        
+        // 初始化
+        updateTime();
+        
+        // 随机屏幕闪烁效果
+        setInterval(() => {
+            if (Math.random() < 0.1) { // 10% 概率
+                document.body.style.opacity = '0.9';
+                setTimeout(() => {
+                    document.body.style.opacity = '1';
+                }, 50);
+            }
+        }, 2000);
+        
+        // 终端点击音效模拟 (视觉反馈)
+        document.addEventListener('click', function() {
+            const terminalContainer = document.querySelector('.terminal-container');
+            terminalContainer.style.boxShadow = '0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 30px rgba(0, 255, 0, 0.2)';
+            setTimeout(() => {
+                terminalContainer.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.1)';
+            }, 100);
+            
+            addLogLine('User interaction detected', 'info');
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+  
+  body {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer utilities {
+  .text-neon {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor;
+  }
+  
+  .text-neon-pink {
+    color: #ff00ff;
+    text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+  }
+  
+  .text-neon-blue {
+    color: #00ffff;
+    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff;
+  }
+  
+  .text-neon-green {
+    color: #0dff00;
+    text-shadow: 0 0 5px #0dff00, 0 0 10px #0dff00, 0 0 20px #0dff00, 0 0 40px #0dff00;
+  }
+  
+  .glass {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  
+  .matrix-bg {
+    background: linear-gradient(45deg, #000 25%, #111 25%, #111 50%, #000 50%, #000 75%, #111 75%);
+    background-size: 4px 4px;
+  }
+  
+  .flip-card {
+    perspective: 1000px;
+  }
+  
+  .flip-card-inner {
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+  }
+  
+  .flip-card.flip .flip-card-inner {
+    transform: rotateX(180deg);
+  }
+  
+  .flip-card-front,
+  .flip-card-back {
+    backface-visibility: hidden;
+  }
+  
+  .flip-card-back {
+    transform: rotateX(180deg);
+  }
+  
+  .terminal-text {
+    font-family: 'Share Tech Mono', monospace;
+  }
+  
+  .glitch {
+    position: relative;
+  }
+  
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .glitch::before {
+    animation: glitch-anim-1 0.5s infinite linear alternate-reverse;
+    color: #ff0000;
+    z-index: -1;
+  }
+  
+  .glitch::after {
+    animation: glitch-anim-2 0.5s infinite linear alternate-reverse;
+    color: #00ffff;
+    z-index: -2;
+  }
+  
+  @keyframes glitch-anim-1 {
+    0% { clip-path: inset(40% 0 61% 0); }
+    20% { clip-path: inset(92% 0 1% 0); }
+    40% { clip-path: inset(43% 0 1% 0); }
+    60% { clip-path: inset(25% 0 58% 0); }
+    80% { clip-path: inset(54% 0 7% 0); }
+    100% { clip-path: inset(58% 0 43% 0); }
+  }
+  
+  @keyframes glitch-anim-2 {
+    0% { clip-path: inset(25% 0 58% 0); }
+    20% { clip-path: inset(54% 0 7% 0); }
+    40% { clip-path: inset(58% 0 43% 0); }
+    60% { clip-path: inset(40% 0 61% 0); }
+    80% { clip-path: inset(92% 0 1% 0); }
+    100% { clip-path: inset(43% 0 1% 0); }
+  }
+}

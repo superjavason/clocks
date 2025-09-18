@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字时钟展示 - 10种超级好看的时钟样式</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .clock-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .clock-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .clock-container {
+            min-height: 100vh;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .clock-container.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .sidebar {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .clock-selector {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .clock-selector:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: rgba(59, 130, 246, 0.6);
+            transform: translateX(5px);
+        }
+        
+        .clock-selector.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-left-color: #3b82f6;
+        }
+        
+        .home-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .floating-orb {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-100px) rotate(180deg); opacity: 0.5; }
+            100% { transform: translateY(0px) rotate(360deg); opacity: 1; }
+        }
+        
+        .main-title {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: text-color-wave 5s ease infinite;
+        }
+        
+        @keyframes text-color-wave {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-900 overflow-hidden">
+    
+    <!-- 侧边栏切换按钮 -->
+    <button id="sidebar-toggle" class="sidebar-toggle text-white p-3 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+    
+    <!-- 侧边栏 -->
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 transform -translate-x-full z-40 overflow-y-auto">
+        <div class="p-6">
+            <h2 class="text-2xl font-bold text-white mb-6 font-['Orbitron']">时钟样式</h2>
+            
+            <!-- 主页按钮 -->
+            <div class="clock-selector p-4 mb-2 text-white rounded-lg" data-clock="home">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mr-3 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-semibold">主页</div>
+                        <div class="text-sm opacity-70">时钟展示首页</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 时钟选择器列表 -->
+            <div class="space-y-2">
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="1">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-pink-500 rounded-full mr-3 flex items-center justify-center text-sm font-bold">1</div>
+                        <div>
+                            <div class="font-semibold">霓虹发光复古</div>
+                            <div class="text-sm opacity-70">深色背景配霓虹色数字</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="2">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-400 rounded-full mr-3 flex items-center justify-center text-sm font-bold text-gray-800">2</div>
+                        <div>
+                            <div class="font-semibold">极简现代扁平</div>
+                            <div class="text-sm opacity-70">纯净简洁，超细字体</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="3">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mr-3 flex items-center justify-center text-sm font-bold">3</div>
+                        <div>
+                            <div class="font-semibold">毛玻璃拟态</div>
+                            <div class="text-sm opacity-70">半透明毛玻璃效果</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="4">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-800 rounded-full mr-3 flex items-center justify-center text-sm font-bold">4</div>
+                        <div>
+                            <div class="font-semibold">复古翻牌时钟</div>
+                            <div class="text-sm opacity-70">3D机械翻牌效果</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="5">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-500 rounded-full mr-3 flex items-center justify-center text-sm font-bold">5</div>
+                        <div>
+                            <div class="font-semibold">赛博朋克矩阵</div>
+                            <div class="text-sm opacity-70">数字雨背景效果</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="6">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-indigo-500 rounded-full mr-3 flex items-center justify-center text-sm font-bold">6</div>
+                        <div>
+                            <div class="font-semibold">模拟数字混合</div>
+                            <div class="text-sm opacity-70">表盘与数字结合</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="7">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-r from-pink-500 to-yellow-500 rounded-full mr-3 flex items-center justify-center text-sm font-bold">7</div>
+                        <div>
+                            <div class="font-semibold">渐变波浪动画</div>
+                            <div class="text-sm opacity-70">流动渐变背景</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="8">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-600 rounded-full mr-3 flex items-center justify-center text-sm font-bold">8</div>
+                        <div>
+                            <div class="font-semibold">3D立体等距</div>
+                            <div class="text-sm opacity-70">立体数字块显示</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="9">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-indigo-900 rounded-full mr-3 flex items-center justify-center text-sm font-bold">9</div>
+                        <div>
+                            <div class="font-semibold">粒子系统背景</div>
+                            <div class="text-sm opacity-70">动态粒子效果</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clock-selector p-4 text-white rounded-lg" data-clock="10">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-600 rounded-full mr-3 flex items-center justify-center text-sm font-bold">10</div>
+                        <div>
+                            <div class="font-semibold">终端控制台</div>
+                            <div class="text-sm opacity-70">复古终端风格</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 使用说明 -->
+            <div class="mt-8 p-4 bg-white bg-opacity-10 rounded-lg">
+                <h3 class="text-white font-semibold mb-2">使用说明</h3>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• 点击左侧列表切换时钟</li>
+                    <li>• 每个时钟都有独特交互</li>
+                    <li>• 支持键盘快捷键操作</li>
+                    <li>• ESC键返回主页</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主内容区域 -->
+    <div id="main-content" class="transition-all duration-300">
+        
+        <!-- 主页 -->
+        <div id="home-container" class="clock-container active home-bg relative">
+            <!-- 浮动装饰 -->
+            <div class="floating-orb top-20 left-20 w-16 h-16 opacity-30" style="animation-delay: 0s;"></div>
+            <div class="floating-orb top-32 right-32 w-12 h-12 opacity-20" style="animation-delay: 5s;"></div>
+            <div class="floating-orb bottom-40 left-1/4 w-20 h-20 opacity-25" style="animation-delay: 10s;"></div>
+            
+            <div class="flex flex-col items-center justify-center min-h-screen px-4 relative z-10">
+                <div class="text-center mb-12">
+                    <h1 class="main-title text-6xl md:text-8xl font-black mb-6 font-['Orbitron']">
+                        数字时钟
+                    </h1>
+                    <p class="text-2xl md:text-3xl text-white font-light mb-8 opacity-90">
+                        10种超级好看的时钟样式
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button onclick="document.getElementById('sidebar').classList.remove('-translate-x-full')" 
+                                class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-8 py-4 rounded-full font-semibold backdrop-filter backdrop-blur-lg border border-white border-opacity-20 transition-all duration-300 hover:scale-105">
+                            开始体验
+                        </button>
+                        <button onclick="showRandomClock()" 
+                                class="bg-transparent hover:bg-white hover:bg-opacity-10 text-white px-8 py-4 rounded-full font-semibold border-2 border-white border-opacity-30 transition-all duration-300 hover:scale-105">
+                            随机时钟
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 特色展示 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl">
+                    <div class="text-center text-white">
+                        <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center backdrop-filter backdrop-blur-lg">
+                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">10种风格</h3>
+                        <p class="text-white opacity-80">从极简到复杂，满足不同审美需求</p>
+                    </div>
+                    
+                    <div class="text-center text-white">
+                        <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center backdrop-filter backdrop-blur-lg">
+                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">实时更新</h3>
+                        <p class="text-white opacity-80">毫秒级精度，平滑动画效果</p>
+                    </div>
+                    
+                    <div class="text-center text-white">
+                        <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center backdrop-filter backdrop-blur-lg">
+                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">响应式设计</h3>
+                        <p class="text-white opacity-80">完美适配桌面和移动设备</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 时钟容器 -->
+        <div id="clock-1" class="clock-container"></div>
+        <div id="clock-2" class="clock-container"></div>
+        <div id="clock-3" class="clock-container"></div>
+        <div id="clock-4" class="clock-container"></div>
+        <div id="clock-5" class="clock-container"></div>
+        <div id="clock-6" class="clock-container"></div>
+        <div id="clock-7" class="clock-container"></div>
+        <div id="clock-8" class="clock-container"></div>
+        <div id="clock-9" class="clock-container"></div>
+        <div id="clock-10" class="clock-container"></div>
+    </div>
+
+    <script>
+        let currentClock = 'home';
+        let clockScripts = {}; // 存储时钟脚本
+        let clockIntervals = {}; // 存储定时器
+        
+        // 侧边栏切换
+        document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+        
+        // 点击外部关闭侧边栏
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebar-toggle');
+            if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+        
+        // 时钟选择
+        document.querySelectorAll('.clock-selector').forEach(selector => {
+            selector.addEventListener('click', function() {
+                const clockId = this.getAttribute('data-clock');
+                switchToClock(clockId);
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            });
+        });
+        
+        // 切换时钟函数 (全局可用)
+        window.switchToClock = async function(clockId) {
+            // 清除当前时钟的定时器
+            if (clockIntervals[currentClock]) {
+                clockIntervals[currentClock].forEach(interval => clearInterval(interval));
+                clockIntervals[currentClock] = [];
+            }
+            
+            // 隐藏所有容器
+            document.querySelectorAll('.clock-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            
+            // 更新侧边栏选中状态
+            document.querySelectorAll('.clock-selector').forEach(selector => {
+                selector.classList.remove('active');
+            });
+            document.querySelector(`[data-clock="${clockId}"]`).classList.add('active');
+            
+            currentClock = clockId;
+            
+            if (clockId === 'home') {
+                document.getElementById('home-container').classList.add('active');
+                return;
+            }
+            
+            const container = document.getElementById(`clock-${clockId}`);
+            
+            // 如果时钟内容还没加载，则加载它
+            if (!container.innerHTML) {
+                try {
+                    const response = await fetch(`./clock${clockId}.html`);
+                    const html = await response.text();
+                    
+                    // 提取body内容
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const bodyContent = doc.body.innerHTML;
+                    
+                    container.innerHTML = bodyContent;
+                    
+                    // 延迟执行脚本，确保DOM完全渲染和容器显示
+                    setTimeout(() => {
+                        // 确保容器已经显示
+                        container.classList.add('active');
+                        
+                        // 再次延迟确保DOM完全准备就绪
+                        setTimeout(() => {
+                            // 提取并执行脚本
+                            const scripts = doc.querySelectorAll('script');
+                            scripts.forEach(script => {
+                                if (script.innerHTML) {
+                                    try {
+                                        // 创建新的script元素并执行
+                                        const newScript = document.createElement('script');
+                                        newScript.innerHTML = script.innerHTML;
+                                        container.appendChild(newScript);
+                                    } catch (error) {
+                                        console.error('Script execution error:', error);
+                                    }
+                                }
+                            });
+                        }, 50);
+                    }, 50);
+                    
+                    // 提取并应用内联样式
+                    const styles = doc.querySelectorAll('style');
+                    styles.forEach(style => {
+                        if (style.innerHTML) {
+                            const newStyle = document.createElement('style');
+                            newStyle.innerHTML = style.innerHTML;
+                            document.head.appendChild(newStyle);
+                        }
+                    });
+                    
+                } catch (error) {
+                    console.error('加载时钟失败:', error);
+                    container.innerHTML = `
+                        <div class="flex items-center justify-center min-h-screen">
+                            <div class="text-center text-white">
+                                <h2 class="text-2xl font-bold mb-4">加载失败</h2>
+                                <p>无法加载时钟 ${clockId}</p>
+                                <button onclick="switchToClock('home')" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                    返回主页
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // 如果内容已经加载，直接显示
+                container.classList.add('active');
+            }
+        }
+        
+        // 随机时钟
+        function showRandomClock() {
+            const randomId = Math.floor(Math.random() * 10) + 1;
+            switchToClock(randomId.toString());
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                switchToClock('home');
+            } else if (e.key >= '1' && e.key <= '9') {
+                switchToClock(e.key);
+            } else if (e.key === '0') {
+                switchToClock('10');
+            } else if (e.key === 'r' || e.key === 'R') {
+                showRandomClock();
+            }
+        });
+        
+        // 初始化
+        switchToClock('home');
+    </script>
+
+</body>
+</html>

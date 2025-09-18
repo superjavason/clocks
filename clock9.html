@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粒子系统背景数字时钟</title>
+    <link href="./dist/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f0f0f 100%);
+            overflow: hidden;
+        }
+        
+        .particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .time-display {
+            font-family: 'JetBrains Mono', monospace;
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .time-display:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .digital-time {
+            font-size: 4rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #64b5f6, #42a5f5, #2196f3, #1976d2);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 6s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(33, 150, 243, 0.3);
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .particle-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            z-index: 20;
+        }
+        
+        .control-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+        }
+        
+        .control-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .control-button.active {
+            background: rgba(33, 150, 243, 0.3);
+            border-color: rgba(33, 150, 243, 0.6);
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+        
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .info-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .attraction-zone {
+            position: fixed;
+            pointer-events: none;
+            z-index: 5;
+            border: 2px solid rgba(33, 150, 243, 0.3);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    
+    <!-- 粒子系统画布 -->
+    <canvas id="particle-canvas" class="particle-canvas"></canvas>
+    
+    <!-- 吸引区域指示器 -->
+    <div id="attraction-zone" class="attraction-zone" style="width: 100px; height: 100px; margin-left: -50px; margin-top: -50px;"></div>
+    
+    <!-- 粒子计数器 -->
+    <div class="particle-counter">
+        <div>粒子数量: <span id="particle-count">0</span></div>
+        <div>FPS: <span id="fps-counter">60</span></div>
+        <div>鼠标: <span id="mouse-pos">0, 0</span></div>
+    </div>
+    
+    <!-- 返回按钮 -->
+    <div class="back-button px-4 py-2 rounded-lg">
+        <button onclick="switchToClock && switchToClock('home')" class="flex items-center text-white">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            返回主页
+        </button>
+    </div>
+
+    <!-- 主时钟区域 -->
+    <div class="flex flex-col items-center justify-center min-h-screen px-4">
+        
+        <!-- 时钟显示 -->
+        <div class="time-display text-center max-w-2xl w-full">
+            <h1 class="text-2xl font-semibold text-white mb-4 opacity-80">粒子系统时钟</h1>
+            
+            <div id="digital-time" class="digital-time mb-4">
+                00:00:00
+            </div>
+            
+            <div id="date-display" class="text-lg text-white opacity-70 mb-6">
+                2024年1月1日 星期一
+            </div>
+            
+            <!-- 信息卡片 -->
+            <div class="info-cards">
+                <div class="info-card">
+                    <div class="info-label">毫秒</div>
+                    <div id="milliseconds" class="info-value">000</div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-label">时间段</div>
+                    <div id="period" class="info-value">上午</div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-label">时区</div>
+                    <div id="timezone" class="info-value">GMT+8</div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-label">运行时间</div>
+                    <div id="uptime" class="info-value">00:00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 控制面板 -->
+    <div class="control-panel">
+        <button id="stars-mode" class="control-button active">星空模式</button>
+        <button id="snow-mode" class="control-button">雪花模式</button>
+        <button id="fireflies-mode" class="control-button">萤火虫模式</button>
+        <button id="reset-particles" class="control-button">重置粒子</button>
+    </div>
+
+    <script>
+        // 粒子系统配置
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        const attractionZone = document.getElementById('attraction-zone');
+        
+        let particles = [];
+        let mouse = { x: 0, y: 0 };
+        let particleMode = 'stars'; // stars, snow, fireflies
+        let startTime = new Date();
+        let frameCount = 0;
+        let lastTime = 0;
+        
+        // 设置画布尺寸
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        // 粒子类
+        class Particle {
+            constructor(x, y, mode = 'stars') {
+                this.x = x || Math.random() * canvas.width;
+                this.y = y || Math.random() * canvas.height;
+                this.mode = mode;
+                
+                switch (mode) {
+                    case 'stars':
+                        this.vx = (Math.random() - 0.5) * 0.2;
+                        this.vy = (Math.random() - 0.5) * 0.2;
+                        this.size = Math.random() * 2 + 0.5;
+                        this.alpha = Math.random() * 0.8 + 0.2;
+                        this.twinkle = Math.random() * 0.02 + 0.01;
+                        this.color = `hsl(${200 + Math.random() * 60}, 80%, 70%)`;
+                        break;
+                        
+                    case 'snow':
+                        this.vx = (Math.random() - 0.5) * 0.5;
+                        this.vy = Math.random() * 2 + 0.5;
+                        this.size = Math.random() * 3 + 1;
+                        this.alpha = Math.random() * 0.8 + 0.2;
+                        this.color = `rgba(255, 255, 255, ${this.alpha})`;
+                        break;
+                        
+                    case 'fireflies':
+                        this.vx = (Math.random() - 0.5) * 1;
+                        this.vy = (Math.random() - 0.5) * 1;
+                        this.size = Math.random() * 3 + 2;
+                        this.alpha = Math.random() * 0.8 + 0.2;
+                        this.pulseSpeed = Math.random() * 0.05 + 0.02;
+                        this.pulsePhase = Math.random() * Math.PI * 2;
+                        this.color = `hsl(${50 + Math.random() * 20}, 100%, 60%)`;
+                        break;
+                }
+                
+                this.originalAlpha = this.alpha;
+            }
+            
+            update() {
+                // 鼠标吸引力
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 100) {
+                    const force = (100 - distance) / 100 * 0.01;
+                    this.vx += dx / distance * force;
+                    this.vy += dy / distance * force;
+                }
+                
+                // 根据模式更新
+                switch (this.mode) {
+                    case 'stars':
+                        this.alpha = this.originalAlpha + Math.sin(Date.now() * this.twinkle) * 0.3;
+                        break;
+                        
+                    case 'snow':
+                        // 雪花左右摆动
+                        this.vx += Math.sin(this.y * 0.01) * 0.01;
+                        break;
+                        
+                    case 'fireflies':
+                        // 萤火虫脉冲发光
+                        this.alpha = this.originalAlpha + Math.sin(Date.now() * this.pulseSpeed + this.pulsePhase) * 0.4;
+                        // 随机改变方向
+                        if (Math.random() < 0.01) {
+                            this.vx += (Math.random() - 0.5) * 0.1;
+                            this.vy += (Math.random() - 0.5) * 0.1;
+                        }
+                        break;
+                }
+                
+                // 移动粒子
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // 边界处理
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+                
+                // 速度阻尼
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, Math.min(1, this.alpha));
+                
+                switch (this.mode) {
+                    case 'stars':
+                        ctx.fillStyle = this.color;
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = this.color;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                        
+                    case 'snow':
+                        ctx.fillStyle = this.color;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                        
+                    case 'fireflies':
+                        ctx.fillStyle = this.color;
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = this.color;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        // 初始化粒子
+        function initParticles(count = 200, mode = 'stars') {
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(undefined, undefined, mode));
+            }
+        }
+        
+        // 动画循环
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+            
+            // 计算FPS
+            frameCount++;
+            if (currentTime - lastTime > 1000) {
+                document.getElementById('fps-counter').textContent = frameCount;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+            
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 更新和绘制粒子
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            
+            // 连接附近的粒子 (仅星空模式)
+            if (particleMode === 'stars') {
+                drawConnections();
+            }
+            
+            // 更新粒子计数
+            document.getElementById('particle-count').textContent = particles.length;
+        }
+        
+        // 绘制粒子连接线
+        function drawConnections() {
+            ctx.strokeStyle = 'rgba(100, 181, 246, 0.2)';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 80) {
+                        ctx.globalAlpha = (80 - distance) / 80 * 0.3;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        // 时间更新
+        function updateTime() {
+            const now = new Date();
+            
+            // 更新时间显示
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+            
+            document.getElementById('digital-time').textContent = `${hours}:${minutes}:${seconds}`;
+            document.getElementById('milliseconds').textContent = milliseconds;
+            
+            // 更新日期
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const weekday = weekdays[now.getDay()];
+            document.getElementById('date-display').textContent = `${year}年${month}月${date}日 ${weekday}`;
+            
+            // 更新其他信息
+            const period = now.getHours() < 12 ? '上午' : '下午';
+            document.getElementById('period').textContent = period;
+            
+            const timezoneOffset = -now.getTimezoneOffset() / 60;
+            const timezoneString = timezoneOffset >= 0 ? `GMT+${timezoneOffset}` : `GMT${timezoneOffset}`;
+            document.getElementById('timezone').textContent = timezoneString;
+            
+            const elapsed = now - startTime;
+            const elapsedMinutes = Math.floor(elapsed / 60000);
+            const elapsedSeconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('uptime').textContent = `${String(elapsedMinutes).padStart(2, '0')}:${String(elapsedSeconds).padStart(2, '0')}`;
+        }
+        
+        // 事件监听器
+        window.addEventListener('resize', resizeCanvas);
+        
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            document.getElementById('mouse-pos').textContent = `${Math.floor(mouse.x)}, ${Math.floor(mouse.y)}`;
+            
+            // 更新吸引区域指示器
+            attractionZone.style.left = mouse.x + 'px';
+            attractionZone.style.top = mouse.y + 'px';
+        });
+        
+        window.addEventListener('click', (e) => {
+            // 在点击位置生成新粒子
+            for (let i = 0; i < 10; i++) {
+                const offsetX = (Math.random() - 0.5) * 50;
+                const offsetY = (Math.random() - 0.5) * 50;
+                particles.push(new Particle(e.clientX + offsetX, e.clientY + offsetY, particleMode));
+            }
+        });
+        
+        // 控制按钮
+        document.getElementById('stars-mode').addEventListener('click', function() {
+            particleMode = 'stars';
+            initParticles(200, 'stars');
+            updateActiveButton(this);
+        });
+        
+        document.getElementById('snow-mode').addEventListener('click', function() {
+            particleMode = 'snow';
+            initParticles(150, 'snow');
+            updateActiveButton(this);
+        });
+        
+        document.getElementById('fireflies-mode').addEventListener('click', function() {
+            particleMode = 'fireflies';
+            initParticles(80, 'fireflies');
+            updateActiveButton(this);
+        });
+        
+        document.getElementById('reset-particles').addEventListener('click', function() {
+            initParticles(particleMode === 'fireflies' ? 80 : (particleMode === 'snow' ? 150 : 200), particleMode);
+        });
+        
+        function updateActiveButton(activeButton) {
+            document.querySelectorAll('.control-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            activeButton.classList.add('active');
+        }
+        
+        // 键盘事件
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && window.switchToClock) {
+                window.switchToClock('home');
+            }
+            if (event.key === '1') document.getElementById('stars-mode').click();
+            if (event.key === '2') document.getElementById('snow-mode').click();
+            if (event.key === '3') document.getElementById('fireflies-mode').click();
+            if (event.key === 'r' || event.key === 'R') document.getElementById('reset-particles').click();
+        });
+        
+        // 初始化
+        resizeCanvas();
+        initParticles(200, 'stars');
+        animate(0);
+        updateTime();
+        setInterval(updateTime, 50);
+    </script>
+
+</body>
+</html>
